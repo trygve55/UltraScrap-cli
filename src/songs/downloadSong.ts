@@ -6,6 +6,7 @@ import { fetchSongYouTubeLink } from "./fetchSongYouTubeLink.js";
 import { createWriteStream } from 'node:fs'
 import ytdl from "ytdl-core";
 import { prompt } from "../index.js";
+import { spawn } from 'child_process';
 
 /**
  * Download asynchronously song from the database
@@ -72,11 +73,15 @@ const rawDownload = async (link: string, dirPath: string, audioFilename: string,
         filter: 'audioonly',
         quality: 'highestaudio',
 
+    }).catch(() => {
+        console.log('Error during downloading audio');
     })
+    console.log('Downloaded audio file');
 
-    await promiseDownload(link, dirPath, videoFilename, 'Downloaded video file', {
-        filter: 'videoonly',
-    })
+    //     await promiseDownload(link, dirPath, videoFilename, 'Downloaded video file', {
+    //         filter: 'videoonly',
+    //     })
+    //     console.log('Downloaded video file');
 }
 
 
@@ -92,17 +97,33 @@ const rawDownload = async (link: string, dirPath: string, audioFilename: string,
  */
 const promiseDownload = (link: string, dirPath: string, filename: string, endString: string, options?: ytdl.downloadOptions): Promise<boolean> => {
     return new Promise((resolve, reject) => {
-        const stream = ytdl(link, options);
+        // const stream = ytdl(link, options);
 
-        stream.pipe(createWriteStream(`${dirPath}/${filename}`));
+        // stream.pipe(createWriteStream(`${dirPath}/${filename}`));
 
-        stream.on('end', () => {
-            console.log(endString);
-            resolve(true)
-        });
-        stream.on('error', () => {
-            console.log('Error during downloading');
-            reject(false)
+        // stream.on('end', () => {
+        // console.log(endString);
+        // resolve(true)
+        // });
+        // stream.on('error', () => {
+        // console.log('Error during downloading');
+        // reject(false)
+        // });
+        console.log(`yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${dirPath}/${filename}" ${link}`);
+        let child = spawn("yt-dlp", ["-x", "--audio-format", "mp3", "--audio-quality", "0", "-o", `${dirPath}/${filename}`, link]);
+        console.log('Downloading audio file');
+
+        // child.stdout.on('data', (data: any) => {
+        //     console.log(data);
+        // });
+        // child.stderr.on('data', (data: any) => {
+        //     console.error(data);
+        // });
+        child.stdout.pipe(process.stdout);
+        child.stderr.pipe(process.stderr);
+        child.on('close', (code: any) => {
+            console.log(`child process exited with code ${code}`);
+            resolve(true);
         });
     })
 }
