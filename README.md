@@ -16,7 +16,7 @@ Just enter song id into the console.
 
 # How to use
 1. Create an account on https://usdb.animux.de (I recommend creating 2 accounts, one for browsing, second one for scrapper, see FAQ)
-2. Create `.env` file in the root directory and put the credentials here:
+2. Create `.env` file in the repository root directory and put the credentials here:
 ```env
 USERNAME="Your username here"
 PASSWORD="Your password here"
@@ -35,6 +35,22 @@ npm run buildstart
 Then you will be prompted to enter song id.
 
 4. Enjoy singing!
+
+## Batch mode
+You can also download multiple songs at once using batch mode:
+ ```shell
+npm run start -- 1042 18304
+```
+
+## Download directory
+You can specify where to download the songs. The default directory is `songs` within the repository root directory.
+ ```shell
+npm run start -- -o "/home/user/Other Songs"
+```
+Or:
+ ```shell
+npm run start -- --downloadDir "/home/user/Other Songs"
+```
 
 # FAQ
 ## Where to find song id?

@@ -14,15 +14,14 @@ import { spawn } from 'child_process';
  * 
  * @param id Id of the song
  */
-export const downloadSong = async (id: string | number) => {
+export const downloadSong = async (id: string | number, downloadDir: string) => {
     console.log(`Fetching song with id: ${id}`)
     const txtData = await fetchSongTxt(id);
     const metadata = getSongMetadata(txtData);
 
     console.log(`Song: ${metadata.TITLE} by ${metadata.ARTIST}`)
 
-
-    const dirPath = `songs/${metadata.ARTIST} - ${metadata.TITLE}`;
+    const dirPath = `${downloadDir}/${metadata.ARTIST} - ${metadata.TITLE}`;
 
     mkdirSync(dirPath, {
         recursive: true,
@@ -68,20 +67,17 @@ export const downloadSong = async (id: string | number) => {
 const rawDownload = async (link: string, dirPath: string, audioFilename: string, videoFilename: string) => {
     console.log('Starting to download video and audio')
 
-
-    await promiseDownload(link, dirPath, audioFilename, 'Downloaded audio file', {
-        filter: 'audioonly',
-        quality: 'highestaudio',
-
-    }).catch(() => {
+    console.log('Downloading audio file');
+    await promiseDownload(link, dirPath, audioFilename, '-x --audio-format mp3 --audio-quality 0').catch(() => {
         console.log('Error during downloading audio');
     })
     console.log('Downloaded audio file');
 
-    //     await promiseDownload(link, dirPath, videoFilename, 'Downloaded video file', {
-    //         filter: 'videoonly',
-    //     })
-    //     console.log('Downloaded video file');
+    console.log('Downloading video file');
+    await promiseDownload(link, dirPath, videoFilename, '-S res,ext:mp4:m4a --recode mp4').catch(() => {
+        console.log('Error during downloading video');
+    })
+    console.log('Downloaded video file');
 }
 
 
@@ -91,34 +87,19 @@ const rawDownload = async (link: string, dirPath: string, audioFilename: string,
  * @param link Link to youtube video
  * @param dirPath Directory path
  * @param filename Filename to save
- * @param endString String to display after download is complete
  * @param options YTDL download options
  * @returns True if successful, false if there was an error
  */
-const promiseDownload = (link: string, dirPath: string, filename: string, endString: string, options?: ytdl.downloadOptions): Promise<boolean> => {
+const promiseDownload = (link: string, dirPath: string, filename: string, options: string): Promise<boolean> => {
     return new Promise((resolve, reject) => {
-        // const stream = ytdl(link, options);
-
-        // stream.pipe(createWriteStream(`${dirPath}/${filename}`));
-
-        // stream.on('end', () => {
-        // console.log(endString);
-        // resolve(true)
-        // });
-        // stream.on('error', () => {
-        // console.log('Error during downloading');
-        // reject(false)
-        // });
-        console.log(`yt-dlp -x --audio-format mp3 --audio-quality 0 -o "${dirPath}/${filename}" ${link}`);
-        let child = spawn("yt-dlp", ["-x", "--audio-format", "mp3", "--audio-quality", "0", "-o", `${dirPath}/${filename}`, link]);
-        console.log('Downloading audio file');
-
-        // child.stdout.on('data', (data: any) => {
-        //     console.log(data);
-        // });
-        // child.stderr.on('data', (data: any) => {
-        //     console.error(data);
-        // });
+        let args: string[] = ["-o", `${dirPath}/${filename}`, link]
+        let option_args: string[] = options.split(" ");
+        let all_args: string[] = option_args.concat(args);
+        
+        console.log('yt-dlp ' + all_args.join(' '));
+        let child = spawn("yt-dlp", all_args);
+        console.log('Downloading file');
+        
         child.stdout.pipe(process.stdout);
         child.stderr.pipe(process.stderr);
         child.on('close', (code: any) => {
